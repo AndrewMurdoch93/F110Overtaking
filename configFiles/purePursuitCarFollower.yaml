@@ -1,0 +1,18 @@
+drivingAlgorithm: 'pure pursuit car follower'
+
+# map paths
+map_path: 'porto'
+map_ext: '.png'
+
+# Number of training episodes and runs
+trainEpisodes: 10
+trainEpisodeTimeLimit: 100
+runs: 1
+
+# Hyper-parameters
+controlSteps: 5
+planSteps: 5
+
+# Constraint parameters
+maxVelocity: 5
+minVelocity: 3

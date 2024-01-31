@@ -1,0 +1,43 @@
+# drivingAlgorithm: 'end-to-end' or 'partial end-to-end'
+drivingAlgorithm: 'partial end-to-end'
+
+# map paths
+map_path: 'f1_esp'
+map_ext: '.png'
+
+trackWidth: 1.7
+
+# Number of training episodes and runs
+trainEpisodes: 1000
+trainEpisodeTimeLimit: 100
+runs: 1
+
+
+# TD3 Agent parameters
+alpha: 0.00025
+beta: 0.00025
+tau: 0.005
+gamma: 0.99 
+updateActorInterval: 2
+warmup: 100 
+maxReplaySize: 1000000
+layer1Size: 400
+layer2Size: 300
+batchSize: 100
+noise: 0.1
+numberActions: 2
+
+
+# Reward signal
+distanceReward: 0.2
+timeStepPenalty: -0.01
+collisionPenalty: -5
+
+# Constraint parameters
+maxVelocity: 5
+minVelocity: 3
+
+
+# Hyper-parameters
+controlSteps: 1
+planSteps: 10

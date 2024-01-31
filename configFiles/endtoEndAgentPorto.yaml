@@ -1,0 +1,42 @@
+# drivingAlgorithm: 'end-to-end' or 'partial end-to-end'
+drivingAlgorithm: 'end-to-end'
+
+# map paths
+map_path: 'porto'
+map_ext: '.png'
+
+
+# Number of training episodes and runs
+trainEpisodes: 2500
+trainEpisodeTimeLimit: 10
+runs: 3
+
+
+# TD3 Agent parameters
+alpha: 0.001
+beta: 0.001
+tau: 0.005
+gamma: 0.99 
+updateActorInterval: 2
+warmup: 100 
+maxReplaySize: 1000000
+layer1Size: 400
+layer2Size: 300
+batchSize: 100
+noise: 0.1
+numberActions: 2
+
+
+# Reward signal
+distanceReward: 0.25
+timeStepPenalty: -0.01
+collisionPenalty: -10
+
+# Constraint parameters
+maxVelocity: 5
+minVelocity: 3
+
+
+# Hyper-parameters
+controlSteps: 20
+planSteps: 20
