@@ -52,7 +52,7 @@ if __name__=='__main__':
     # agentTrainer.testAgent('configTD3Agent', render=False, episodes=100)
     # agentTrainer.testAgent('configPartialEndtoEndAgent', render=False, episodes=100)
     # agentTrainer.testAgent('partialEndtoEndAgentPorto', render=True, episodes=100)
-    # agentTrainer.testAgent('endtoEndAgentPorto', render=False, episodes=100)
+    agentTrainer.testAgent('endtoEndAgentPorto', render=True, episodes=100)
     # agentTrainer.testAgent('partialEndtoEndAgentBarcelona', render=False, episodes=10)
     # agentTrainer.testAgent('endtoEndAgentBarcelona', render=False, episodes=10)
     # agentTrainer.testAgent('testAgentBarcelona', render=True)

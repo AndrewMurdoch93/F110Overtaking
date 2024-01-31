@@ -88,7 +88,7 @@ class AgentTrainer():
 
 
         spawnIdx1 = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
-        spawnIdx2 = (spawnIdx1 - 15)
+        spawnIdx2 = (spawnIdx1 - 40)
         if spawnIdx2 < 0:
             spawnIdx2+=self.trackLine.numberIdxs
         

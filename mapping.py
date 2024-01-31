@@ -163,7 +163,7 @@ def generate_csv():
     mapName = 'f1_esp'
     
     m = map(mapName)
-    m.find_centerline(False)
+    m.find_centerline(True)
     
     centerlineData = {
         'x': m.rx,
