@@ -20,19 +20,20 @@ import pathTracker
 import rewardSignal
 import trackCenterline
 
+from drivingAlgorithms import purePursuitLineFollower
 
 
 
 
-def race(configFileNames, render=True, episodes=100):
+
+def race(scenarioFilename, numberEpisodes, numberRuns, saveFilepath, render=True):
     """
     Function called to test a single agent
     """
-    conf1 = functions.openConfigFile(configFileNames[0])
-    conf2 = functions.openConfigFile(configFileNames[1])
-    agentTrainer = AgentTrainer(conf1=conf1, conf2=conf2)
-    # agentTrainer.executeRuns(numberEpisodes=episodes, numberRuns=conf.runs, render=render, training=False, saveDirectory='experimentsData/testingData', saveFilename=conf.name, vehicleModelParamDict={})
-    agentTrainer.executeRuns(numberEpisodes=episodes, numberRuns=1, render=True, training=False, saveDirectory='experimentsData/testingData', saveFilename=conf1.name, vehicleModelParamDict={})
+
+    agentTrainer = AgentTrainer(scenarioFilename, render)
+    agentTrainer.executeRuns(numberEpisodes, numberRuns, saveFilepath, vehicleModelParamList=None)
+
  
 
 class AgentTrainer():
@@ -40,23 +41,30 @@ class AgentTrainer():
     This class manages the training of agents
     """
     
-    def __init__(self, conf1, conf2):
+    def __init__(self, scenarioFilename, render):
         
-        self.conf1 = conf1
-        self.conf2 = conf2
+        # Get scenario configuration
+        self.scenarioParams = functions.openConfigFile('scenarios/'+scenarioFilename)
+        self.render=render
 
-        self.numAgents = 2
-        self.env = F110Env(map=conf1.map_path, num_agents=self.numAgents)
-        obs, _, _, _ = self.env.reset(np.array([[0., 0., 0., 0.], [0., 0., 0., 0.]])) 
-
-        # self.rewardSignal = rewardSignal.RewardSignal(conf)
-        self.trackLine = trackCenterline.TrackLine(conf1)
+        # Initialise the environment and track centerline
+        self.numVehicles = len(self.scenarioParams.drivingAlgorithmConfigs)
+        self.env = F110Env(map = self.scenarioParams.map, num_agents = self.numVehicles)
+        obs, _, _, _ = self.env.reset(np.zeros((self.numVehicles, 4)))
+        self.trackLine = trackCenterline.TrackLine(map = self.scenarioParams.map, numVehicles=self.numVehicles)
         self.trackLine.reset(obs)
 
 
-        self.drivingAlgorithm1 = drivingAlgorithms.purePursuitCenterlineFollower(conf1, self.trackLine)
-        self.drivingAlgorithm2 = drivingAlgorithms.purePursuitCarFollower(conf2, self.trackLine)
-        self.learnSteps = self.conf1.controlSteps
+        # Get configuration of driving algorithms
+        self.drivingAlgorithmConfigs = []
+        for drivingAlgorithmConfig in self.scenarioParams.drivingAlgorithmConfigs:
+            self.drivingAlgorithmConfigs.append(functions.openConfigFile('drivingAlgorithms/'+drivingAlgorithmConfig))
+        
+        # Initialise driving algorithms
+        self.drivers = self.initialiseDrivingAlgorithms()
+
+        # self.rewardSignal = rewardSignal.RewardSignal(conf)
+        # self.learnSteps = 10
 
 
         #Add render callbacks
@@ -81,50 +89,74 @@ class AgentTrainer():
         }
 
         self.resultsDataframe = pd.DataFrame(self.resultsDict)
-        
+    
+
+    def initialiseDrivingAlgorithms(self):
+        """
+        Selects and initialises a list of driving algorithms
+        """
+                
+        drivers = []
+        for idx, drivingAlgorithmConfig in enumerate(self.drivingAlgorithmConfigs):
+            if drivingAlgorithmConfig.drivingAlgorithm == "purePursuitLineFollower":
+                if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
+                    drivers.append(purePursuitLineFollower.purePursuitLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
+
+        return drivers
+
 
     def generateInitialPoses(self):
         
+        """
+        Generates an initial pose for the ego vehicle by selecting a random point on the centerline
+        Target vehicles spawn ahead of the ego vehicle
+        """
 
+        spawnIdxs = np.zeros(self.numVehicles)
+        initialPoses = np.zeros((self.numVehicles, 4))
 
-        spawnIdx1 = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
-        spawnIdx2 = (spawnIdx1 - 40)
-        if spawnIdx2 < 0:
-            spawnIdx2+=self.trackLine.numberIdxs
+        spawnIdxs[0] = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
+        for i in range(1, self.numVehicles):
+            spawnIdxs[i] = spawnIdxs[i-1]+15 # Cars spawn in front of each other
+
+            # Make sure that generated trackline indeces are valid
+            if spawnIdxs[i] > self.trackLine.numberIdxs:
+                spawnIdxs[i] %= self.trackLine.numberIdxs
+            if  spawnIdxs[i] < 0:
+                spawnIdxs[i] += self.trackLine.numberIdxs
         
-
-        xStart1 = self.trackLine.cx[spawnIdx1]
-        yStart1 = self.trackLine.cy[spawnIdx1]
-        yawStart1 = self.trackLine.cyaw[spawnIdx1]
-        velStart1 = np.random.uniform(low=self.conf1.minVelocity, high=self.conf1.maxVelocity)
-
-        xStart2 = self.trackLine.cx[spawnIdx2]
-        yStart2 = self.trackLine.cy[spawnIdx2]
-        yawStart2 = self.trackLine.cyaw[spawnIdx2]
-        velStart2 = velStart1
-
-        initialPoses = np.array([[xStart1, yStart1, yawStart1, velStart1], [xStart2, yStart2, yawStart2, velStart2]])
+        for i in range(self.numVehicles):
+            xStart = self.trackLine.cx[int(spawnIdxs[i])]
+            yStart = self.trackLine.cy[int(spawnIdxs[i])]
+            yawStart = self.trackLine.cyaw[int(spawnIdxs[i])]
+            velStart = np.random.uniform(low=3, high=4)
+            initialPoses[i, :] = np.array([xStart, yStart, yawStart, velStart]) 
 
         return initialPoses
 
-    def executeRuns(self, numberEpisodes, numberRuns, render, training, saveDirectory, saveFilename, vehicleModelParamDict):
+
+
+    def executeRuns(self, numberEpisodes, numberRuns, saveFilepath, vehicleModelParamList=None):
         
         for run in range(numberRuns):
             print('Run: ', str(run))
-            self.drivingAlgorithm1.reset(run=run, training=training)
-            self.drivingAlgorithm2.reset(run=run, training=training)
-            self.executeEpisodes(numberEpisodes=numberEpisodes, run=run, render=render, training=training, saveDirectory=saveDirectory, saveFilename=saveFilename, vehicleModelParamDict=vehicleModelParamDict)
+            
+            
+            for idx, driver in enumerate(self.drivers):
+                driver.reset(run=run)
+
+            self.executeEpisodes(numberEpisodes, saveFilepath, vehicleModelParamList)
 
 
+    def executeEpisodes(self, numberEpisodes, saveFilepath, vehicleModelParamList=None, run=0):
 
-    def executeEpisodes(self, numberEpisodes, run, render, training, saveDirectory, saveFilename, vehicleModelParamDict):
-        
-        filePath = saveDirectory + '/' + saveFilename + '.csv'
+
+        # filePath = self.scenarioParams.savePath + '.csv'
 
 
         for episode in range(numberEpisodes):
             
-            episodeCrash, episodeReward, episodeProgress, lapTime = self.executeOneEpisode(initialPose=np.array([]), saveTrajectory=False, training=training, render=render, vehicleModelParamDict=vehicleModelParamDict)
+            episodeCrash, episodeReward, episodeProgress, lapTime = self.executeOneEpisode()
 
             # Update information for training run
             dataRow = {
@@ -157,80 +189,69 @@ class AgentTrainer():
     
     
 
-    def executeOneEpisode(self, initialPose, saveTrajectory, training, render, vehicleModelParamDict):
+    def executeOneEpisode(self, initialPoses=None, saveTrajectory=False, vehicleModelParamList=None):
         
         """
         Inputs:
-        initialPose: Specified as np.array([[xStart, yStart, yawStart]]). To generate random starting points, specify empty array np.array([[]])
+        initialPoses: Specified as np.array([[xStart, yStart, yawStart], [xStart, yStart, yawStart], ... ]). To generate random starting points, specify empty array np.array([[]])
         saveTrajectory: True/False. If True, function returns trajectory as additional output.
         training: True/Flase.
         render: True/False.
         vehicleModelParamDict: Dictionary with vehicle model parameters. If empty, default parameters are used. 
         """
 
-        if len(vehicleModelParamDict)!=0: 
-            self.env.update_params(vehicleModelParamDict, index=0)
 
         # Get initial pose of vehicle, if not specified
-        if initialPose.size==0:
+        if initialPoses is None:
             initialPoses =  self.generateInitialPoses()
-
+        
+        # Reset the vehicle model, if necessary
+        if vehicleModelParamList is not None:
+            for i in range(self.numVehicles):
+                self.env.update_params(vehicleModelParamList[i], index=0)
         
         # Reset componenets of the environmnet (vehicle and trackline)
         obs, step_reward, done, info = self.env.reset(initialPoses)
         next_obs = obs
-        
         self.trackLine.reset(obs)
         
         # Reset variables to store episode data
         lapTime = 0.
-        episodeProgress = 0.
-        episodeReward = 0.
+        episodeProgress = np.zeros(self.numVehicles)
         episodeCrash = False
-        
         episodeTrajectory = []
         episodeProgresses = []
 
-        i=0
+        # Reset episode time to 0
+        timeStep=0
+
+        # Define shape of control action
+        controlActions = np.zeros((self.numVehicles, 2))
 
         # Complete one episode
-        while not done and (episodeProgress <= 2*self.trackLine.distance[-1]):
+        while not done and np.any((episodeProgress <= 2*self.trackLine.distance[-1])):
             
-            if i % self.conf1.planSteps == 0:
-                plan1 = self.drivingAlgorithm1.generatePlan(next_obs)
-                plan2 = self.drivingAlgorithm2.generatePlan(next_obs)
+            # Get actions from each algorithm
+            for idx, driver in enumerate(self.drivers):
+                controlActions[idx,:] = driver.stepDrivingAlgorithm(next_obs)
 
-            if i % self.conf1.controlSteps == 0:
-                controlActions1 = self.drivingAlgorithm1.generateControlAction(plan1, next_obs, 0)
-                controlActions2 = self.drivingAlgorithm2.generateControlAction(plan2, next_obs, 1)
-
-            next_obs, step_time, done, info = self.env.step(np.array([controlActions1, controlActions2]))
+            # Simulation step
+            next_obs, step_time, done, info = self.env.step(controlActions)
             
-            if ((i+1) % self.learnSteps == 0 and i>1) or (done==True):
-                
-                # Get information for 1 [learning] time step 
-                timeStepProgress = self.trackLine.findTimeStepProgress(next_obs)
-                # reward = self.rewardSignal.calculateReward(timeStepProgress, done)
+            # Get progress along centerline
+            timeStepProgress = self.trackLine.findTimeStepProgresses(next_obs)
+            episodeProgress += timeStepProgress
 
-
-                # Update information for entire episode
-                # episodeReward += reward
-                episodeProgress += timeStepProgress
-                
-                # if training == True:
-                #     self.drivingAlgorithm.storeTransition(obs, reward, next_obs, int(done))
-                #     self.drivingAlgorithm.learn()
-                
-                obs = next_obs
+            obs = next_obs
             
-            i+=1
+            timeStep+=1
             
             if saveTrajectory==True:
                 episodeTrajectory.append([obs])
                 episodeProgresses.append(episodeProgress)
 
 
-            if render==True:
+            if self.render==True:
                 self.env.render(mode='human_fast')
         
         if done==True:
@@ -240,19 +261,19 @@ class AgentTrainer():
 
         if done==False:
             episodeCrash=0
-            lapTime=i/100
+            lapTime=timeStep/100
             print("Episode completed")
 
 
 
-        if saveTrajectory==False:
-            return episodeCrash, episodeReward, episodeProgress, lapTime
-        elif saveTrajectory==True:
-            return episodeCrash, episodeReward, episodeProgress, lapTime, episodeTrajectory, episodeProgresses
+        # if saveTrajectory==False:
+        #     return episodeCrash, episodeReward, episodeProgress, lapTime
+        # elif saveTrajectory==True:
+        #     return episodeCrash, episodeReward, episodeProgress, lapTime, episodeTrajectory, episodeProgresses
         
 
 
-race(configFileNames=['purePursuitController', 'purePursuitCarFollower'], render=True, episodes=100) 
+race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
 
 
 

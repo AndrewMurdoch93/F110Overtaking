@@ -1,0 +1,9 @@
+# Initial experiment performed to get two line followers to 'race' on the same track
+# Experiment type
+
+
+map: "porto"
+drivingAlgorithmConfigs: ["purePursuitLineFollower", 
+                    "purePursuitLineFollower"]
+learningAlgorithm: [False, False]
+savePath: 'experimentsData/testingData'

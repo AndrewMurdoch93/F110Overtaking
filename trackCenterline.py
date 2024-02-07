@@ -16,10 +16,13 @@ class TrackLine():
     Visualises the centerline
     """
 
-    def __init__(self, conf):
-        self.mapPath = conf.map_path
+    def __init__(self, map, numVehicles):
+        self.mapPath = map
         self.cx, self.cy, self.cyaw, self.ccurve, self.distance, self.csp = self.loadCenterline()
         self.numberIdxs = len(self.cx)
+        self.numVehicles = numVehicles
+        self.initialCenterlinePoints = np.zeros(numVehicles)
+        self.oldClosestCenterlinePointIdxs = np.zeros(numVehicles)
 
 
     def loadCenterline(self):
@@ -35,36 +38,60 @@ class TrackLine():
 
     
     def reset(self, obs):
-        self.initialCenterlinePoint = self.findClosestCenterlinePoint(obs)
-        self.oldClosestCenterlinePointIdx = self.initialCenterlinePoint
+        """
+        Resets the trackline by creating a new set of initial centerline points
+        """
+        for i in range(self.numVehicles):
+            self.initialCenterlinePoints[i] = self.findClosestCenterlinePoint(obs=obs, vehicleNumber=i)
+        
+        self.oldClosestCenterlinePointIdxs = self.initialCenterlinePoints
     
 
-    def findTimeStepProgress(self, obs):
+    def findTimeStepProgresses(self, obs):
+        """
+        Finds the progress between the current and previous time steps of all vehicles on the track
+        """
 
-        newClosestCenterlinePointIdx = self.findClosestCenterlinePoint(obs)
-        centerlineIdxDiff = newClosestCenterlinePointIdx - self.oldClosestCenterlinePointIdx
+        # Initialise shap of 'timeStepDistanceProgresses'
+        timeStepProgresses = np.zeros(self.numVehicles)
+
+        for i in range(self.numVehicles):
+            timeStepProgresses[i] = self.findTimeStepProgress(obs=obs, vehicleNumber=i)
+            
+        
+        return timeStepProgresses
+
+
+    def findTimeStepProgress(self, obs, vehicleNumber):
+        """
+        Finds the progress between the current and previous time steps for a single vehicle
+        """
+        oldClosestCenterlinePointIdx = int(self.oldClosestCenterlinePointIdxs[vehicleNumber])
+        newClosestCenterlinePointIdx = self.findClosestCenterlinePoint(obs, vehicleNumber)
+        centerlineIdxDiff = newClosestCenterlinePointIdx - oldClosestCenterlinePointIdx
 
         # Vehilce is stationary or travelling perpendicular to centerline
-        if  centerlineIdxDiff==0:
+        if  centerlineIdxDiff == 0:
             timeStepProgress = 0
         
         # Vehicle is travelling forwards along centerline
         elif (0 < centerlineIdxDiff < int(self.numberIdxs/2)):   
-            timeStepProgress = newClosestCenterlinePointIdx - self.oldClosestCenterlinePointIdx
+            timeStepProgress = newClosestCenterlinePointIdx - oldClosestCenterlinePointIdx
         
         # Vehicle is crossing start location, going forward
         elif centerlineIdxDiff < -int(self.numberIdxs/2):   
-            timeStepProgress = (self.numberIdxs-np.abs(self.oldClosestCenterlinePointIdx)) + newClosestCenterlinePointIdx
+            timeStepProgress = (self.numberIdxs-np.abs(oldClosestCenterlinePointIdx)) + newClosestCenterlinePointIdx
 
         # Vehicle is travelling backwards
         elif -self.numberIdxs < centerlineIdxDiff < 0:  
-            timeStepProgress = newClosestCenterlinePointIdx - self.oldClosestCenterlinePointIdx
+            timeStepProgress = newClosestCenterlinePointIdx - oldClosestCenterlinePointIdx
 
         # Vehicle is crossing start location going backwards
         elif centerlineIdxDiff>=int(self.numberIdxs/2):    
-            timeStepProgress = -(self.oldClosestCenterlinePointIdx+(np.abs(self.numberIdxs - newClosestCenterlinePointIdx)))
+            timeStepProgress = -(oldClosestCenterlinePointIdx+(np.abs(self.numberIdxs - newClosestCenterlinePointIdx)))
 
-        self.oldClosestCenterlinePointIdx =  newClosestCenterlinePointIdx
+
+        self.oldClosestCenterlinePointIdxs[vehicleNumber] =  newClosestCenterlinePointIdx
 
         # Convert from idx to distance
         timeStepDistanceProgress = timeStepProgress*0.1
@@ -72,19 +99,19 @@ class TrackLine():
         return timeStepDistanceProgress
 
 
-    def findClosestCenterlinePoint(self, obs):
+    def findClosestCenterlinePoint(self, obs, vehicleNumber):
         
-        dx = [obs['poses_x'][0] - irx for irx in self.cx]
-        dy = [obs['poses_y'][0] - iry for iry in self.cy]
+        dx = [obs['poses_x'][vehicleNumber] - irx for irx in self.cx]
+        dy = [obs['poses_y'][vehicleNumber] - iry for iry in self.cy]
         distances = np.hypot(dx, dy)    
         ind = np.argmin(distances)
         
         return ind
 
-    def findClosestDistanceToCenterline(self, obs):
+    def findClosestDistanceToCenterline(self, obs, vehicleNumber):
         
-        dx = [obs['poses_x'][0] - irx for irx in self.cx]
-        dy = [obs['poses_y'][0] - iry for iry in self.cy]
+        dx = [obs['poses_x'][vehicleNumber] - irx for irx in self.cx]
+        dy = [obs['poses_y'][vehicleNumber] - iry for iry in self.cy]
         distances = np.hypot(dx, dy)    
         
         idx = np.argmin(distances)
@@ -94,7 +121,6 @@ class TrackLine():
 
 
     def convert_xy_obs_to_sn(self, obs):
-        
         """
         Converts the vehicle pose to Frenet frame coordinates
         """
@@ -105,10 +131,10 @@ class TrackLine():
         y = obs['poses_y'][0]
         yaw = obs['poses_theta'][0]
 
-        ind = self.findClosestCenterlinePoint(obs)
+        ind = self.findClosestCenterlinePoint(obs, 0)
         
         s = ind*ds                              # Exact position of s
-        n = self.findClosestDistanceToCenterline(obs)   # n distance (unsigned), not interpolated
+        n = self.findClosestDistanceToCenterline(obs, 0)   # n distance (unsigned), not interpolated
 
         # Get sign of n by comparing angle between (x,y) and (s,0), and the angle of the centerline at s
         xy_angle = np.arctan2((y-self.cy[ind]),(x-self.cx[ind]))      # angle between (x,y) and (s,0)

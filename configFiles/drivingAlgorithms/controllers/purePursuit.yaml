@@ -1,0 +1,5 @@
+# Configuration file for a simple pure pursuit path tracker
+
+wheelbase: 0.3302 # For F110 car, check againts model param dict
+k: 0.1 # Look-ahead gain
+Lfc: 1 # Look-ahead constant

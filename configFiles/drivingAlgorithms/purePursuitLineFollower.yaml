@@ -1,0 +1,9 @@
+# Config file for a driving algorithm comprising only a pure pursuit steering controller,
+# and no variable velocity control (tracks a constant velocity)
+
+drivingAlgorithm: "purePursuitLineFollower"
+globalPlan: "trackCenterLine" # Current options: trackCenterLine, ...
+controllerConfig: "purePursuit"
+referenceVelocity: 4 # m/s
+controllerInterval: 5  # In Number of time steps between controller outputs
+

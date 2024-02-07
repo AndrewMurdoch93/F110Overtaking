@@ -12,23 +12,28 @@ class purePursuit():
     
     def __init__(self, conf):
 
-        self.old_nearest_point_index = None
-        self.wheelbase = 0.3302
-        self.k = 0.1
-        self.Lfc = 1
+        # Parameters for initialisation
         self.conf = conf
+        self.wheelbase = conf.wheelbase
+        self.k = conf.k
+        self.Lfc = conf.Lfc
 
+        self.old_nearest_point_index = None
+        
+        # For visualisation
         self.canvas = {}
         self.batch = pyglet.graphics.Batch()
 
-    def read_centerline_waypoints_csv(self):
 
-        centerlineDataframe = pd.read_csv(sys.path[0] + '/maps/' + self.conf.map_path + '_centerline.csv')
+
+    # def read_centerline_waypoints_csv(self):
+
+    #     centerlineDataframe = pd.read_csv(sys.path[0] + '/maps/' + self.conf.map_path + '_centerline.csv')
         
-        self.record_waypoints(cx=np.array(centerlineDataframe['x']),
-                            cy=np.array(centerlineDataframe['y']),
-                            cyaw=np.array(centerlineDataframe['yaw'])
-                            )
+    #     self.record_waypoints(cx=np.array(centerlineDataframe['x']),
+    #                         cy=np.array(centerlineDataframe['y']),
+    #                         cyaw=np.array(centerlineDataframe['yaw'])
+    #                         )
     
     def record_waypoints(self, cx, cy, cyaw):
         #Initialise waypoints for planner

@@ -262,7 +262,7 @@ class EndtoEnd():
 
 
 
-class purePursuitCenterlineFollower():
+class purePursuitLineFollower():
     
     """
     This class contains all methods pertaining to a simple pure pusuit centerline following algorithm
@@ -319,10 +319,9 @@ class purePursuitCarFollower():
     This class contains all methods pertaining to a simple pure pusuit centerline following algorithm
     """
 
-    def __init__(self, conf, trackLine):
+    def __init__(self, config):
         
         self.conf = conf
-        self.trackLine = trackLine
         self.steeringControl = pathTracker.purePursuit(conf)
 
         self.maxVelocity = conf.maxVelocity
