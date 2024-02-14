@@ -1,0 +1,7 @@
+# Experiment performed to get an LQR steering controller to follow a line
+
+
+map: "porto"
+drivingAlgorithmConfigs: ['LQRLineFollower', 'LQRLineFollower']
+learningAlgorithm: [False, False]
+savePath: 'experimentsData/testingData'

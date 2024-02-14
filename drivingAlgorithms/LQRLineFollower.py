@@ -1,7 +1,7 @@
 import numpy as np
 import pathTracker
 import functions
-
+from controllers import LQRController
 
 
 
@@ -18,17 +18,18 @@ class LQRLineFollower():
 
         LQRConfig = functions.openConfigFile('drivingAlgorithms/controllers/'+conf.controllerConfig)
 
-        self.steeringControl = pathTracker.LQR(LQRConfig)
-        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw)
+        self.steeringControl = LQRController.LQRSteer(LQRConfig, vehicleNumber)
+        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         self.vehicleNumber = vehicleNumber
-
+        self.e = 0
+        self.e_th = 0
 
     def reset(self, **kwargs):
         """
         reset method is called at the start of every episode
         """
         
-        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw)
+        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         self.timeStep = 0
 
 
@@ -53,11 +54,7 @@ class LQRLineFollower():
         Control action steers the car towards a target point ahead of the car on the line.
         """
 
-        # Get the correct point to steer towards. Specified as the index of the point on the specified line
-        target_index, _ = self.steeringControl.search_target_waypoint(obs['poses_x'][self.vehicleNumber], obs['poses_y'][self.vehicleNumber], obs['linear_vels_x'][self.vehicleNumber])
-        
-        # Get desired steering angle based on target point
-        delta_ref, target_index = self.steeringControl.pure_pursuit_steer_control(obs['poses_x'][self.vehicleNumber], obs['poses_y'][self.vehicleNumber], obs['poses_theta'][self.vehicleNumber], obs['linear_vels_x'][self.vehicleNumber], target_index)
+        delta_ref, target_ind, self.e, self.e_th = self.steeringControl.lqr_steering_control(obs=obs, pe=self.e, pth_e=self.e_th)
 
         # Select velocity - for now, it's just constant
         velocity_ref = self.conf.referenceVelocity

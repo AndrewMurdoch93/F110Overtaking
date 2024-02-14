@@ -20,7 +20,7 @@ import pathTracker
 import rewardSignal
 import trackCenterline
 from drivingAlgorithms import purePursuitLineFollower
-
+from drivingAlgorithms import LQRLineFollower
 
 
 
@@ -100,6 +100,11 @@ class AgentTrainer():
             if drivingAlgorithmConfig.drivingAlgorithm == "purePursuitLineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(purePursuitLineFollower.purePursuitLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
+            
+            if drivingAlgorithmConfig.drivingAlgorithm == "LQRLineFollower":
+                if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
+                    drivers.append(LQRLineFollower.LQRLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
+        
 
         return drivers
 
@@ -228,7 +233,7 @@ class AgentTrainer():
         controlActions = np.zeros((self.numVehicles, 2))
 
         # Complete one episode
-        while not done and np.any((episodeProgress <= 2*self.trackLine.distance[-1])):
+        while not done and np.any((episodeProgress <= 5*self.trackLine.distance[-1])):
             
             # Get actions from each algorithm
             for idx, driver in enumerate(self.drivers):
@@ -272,7 +277,10 @@ class AgentTrainer():
         
 
 
-race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
+# race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
+
+race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
+
 
 
 

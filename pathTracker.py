@@ -35,6 +35,7 @@ class purePursuit():
     #                         cyaw=np.array(centerlineDataframe['yaw'])
     #                         )
     
+    
     def record_waypoints(self, cx, cy, cyaw):
         #Initialise waypoints for planner
         self.cx=cx
@@ -133,3 +134,7 @@ class purePursuit():
         for i in range(points.shape[0]):
             vertex  = renderObject.batch.add(1, GL_POINTS, None, ('v3f/stream', [scaled_points[i, 0], scaled_points[i, 1], 0.]),
                                 ('c3B/stream', [100, 0, 0]))
+
+
+
+
