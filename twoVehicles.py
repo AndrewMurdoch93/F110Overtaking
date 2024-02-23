@@ -19,9 +19,10 @@ import mapping
 import pathTracker
 import rewardSignal
 import trackCenterline
+
 from drivingAlgorithms import purePursuitLineFollower
 from drivingAlgorithms import LQRLineFollower
-
+from drivingAlgorithms import MPCLineFollower
 
 
 
@@ -104,7 +105,12 @@ class AgentTrainer():
             if drivingAlgorithmConfig.drivingAlgorithm == "LQRLineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(LQRLineFollower.LQRLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
-        
+
+            if drivingAlgorithmConfig.drivingAlgorithm == "MPCineFollower":
+                if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
+                    drivers.append(MPCLineFollower.MPCLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
+
+
 
         return drivers
 
@@ -278,8 +284,9 @@ class AgentTrainer():
 
 
 # race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
+# race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
+race(scenarioFilename='MPCLineFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True) 
 
-race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
 
 
 

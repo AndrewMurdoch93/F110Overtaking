@@ -67,6 +67,15 @@ def sub_angles_complex(a1, a2):
 
     return phase
 
+def pi_2_pi(angle):
+    while(angle > math.pi):
+        angle = angle - 2.0 * math.pi
+
+    while(angle < -math.pi):
+        angle = angle + 2.0 * math.pi
+
+    return angle
+
 def add_locations(x1=[0, 0], x2=[0, 0], dx=1):
     # dx is a scaling factor
     ret = [0.0, 0.0]

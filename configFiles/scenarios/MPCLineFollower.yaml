@@ -1,0 +1,11 @@
+# Initial experiment performed to get get an MPC to optimally follow a the track centerline
+# Ego vehicle = MPC controller, tracks centerline
+# Target vehicle = MPC controller, tracks centerline
+
+
+
+map: "porto"
+drivingAlgorithmConfigs: ["purePursuitLineFollower", 
+                    "purePursuitLineFollower"]
+learningAlgorithm: [False, False]
+savePath: 'experimentsData/testingData'

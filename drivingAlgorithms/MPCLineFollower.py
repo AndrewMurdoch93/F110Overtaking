@@ -1,6 +1,7 @@
 import numpy as np
 import functions
-from controllers import LQRController
+from controllers import MPCController
+
 
 
 
@@ -15,9 +16,9 @@ class LQRLineFollower():
         self.trackLine = line
         self.referenceVelocity = conf.referenceVelocity
 
-        LQRConfig = functions.openConfigFile('drivingAlgorithms/controllers/'+conf.controllerConfig)
+        MPCConfig = functions.openConfigFile('drivingAlgorithms/controllers/'+conf.controllerConfig)
 
-        self.steeringControl = LQRController.LQRSteer(LQRConfig, vehicleNumber)
+        self.steeringControl = MPCController.MPCSteer(MPCConfig, vehicleNumber)
         self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         self.vehicleNumber = vehicleNumber
         self.e = 0
@@ -53,14 +54,15 @@ class LQRLineFollower():
         Control action steers the car towards a target point ahead of the car on the line.
         """
 
-        delta_ref, target_ind, self.e, self.e_th = self.steeringControl.lqr_steering_control(obs=obs, pe=self.e, pth_e=self.e_th)
-
-        # Select velocity - for now, it's just constant
-        velocity_ref = self.conf.referenceVelocity
-
+        
+        velocity_ref = obs
         # Combine steering and velocity into an action
         controlAction = [delta_ref, velocity_ref]
         
         return controlAction
     
+
+
+
+
 

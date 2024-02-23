@@ -1,0 +1,9 @@
+# Config file for a driving algorithm comprising only an MPC controller for steering and velocity,
+# and no variable velocity control (tracks a constant velocity)
+
+drivingAlgorithm: "MPCLineFollower"
+globalPlan: "trackCenterLine" # Current options: trackCenterLine, ...
+controllerConfig: "MPC"
+referenceVelocity: 4 # m/s
+controllerInterval: 5  # In Number of time steps between controller outputs
+
