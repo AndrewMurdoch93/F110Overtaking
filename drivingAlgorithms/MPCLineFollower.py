@@ -1,35 +1,41 @@
 import numpy as np
 import functions
+import math
 from controllers import MPCController
 
 
 
 
-class LQRLineFollower():
+class MPCLineFollower():
     """
     This class contains all methods pertaining to a simple pure pusuit centerline following algorithm
     """
 
-    def __init__(self, conf, line, vehicleNumber):
+    def __init__(self, algorithmConf, vehicleConf, line, vehicleNumber):
         
-        self.conf = conf
+        self.algorithmConf = algorithmConf
+        self.vehicleConf = vehicleConf
         self.trackLine = line
-        self.referenceVelocity = conf.referenceVelocity
+ 
 
-        MPCConfig = functions.openConfigFile('drivingAlgorithms/controllers/'+conf.controllerConfig)
+        self.controllerConf = functions.openConfigFile('drivingAlgorithms/controllers/'+algorithmConf.controllerConfig)
+        
+        self.controller = MPCController.MPC(self.controllerConf, vehicleConf, vehicleNumber)
+        
+        self.controller.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
+        self.controller.calc_speed_profile(target_speed=self.controllerConf.TARGET_SPEED)
 
-        self.steeringControl = MPCController.MPCSteer(MPCConfig, vehicleNumber)
-        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         self.vehicleNumber = vehicleNumber
         self.e = 0
         self.e_th = 0
+
 
     def reset(self, **kwargs):
         """
         reset method is called at the start of every episode
         """
         
-        self.steeringControl.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
+        self.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         self.timeStep = 0
 
 
@@ -54,15 +60,12 @@ class LQRLineFollower():
         Control action steers the car towards a target point ahead of the car on the line.
         """
 
-        
-        velocity_ref = obs
+        delta_ref, velocity_ref = self.controller.getAction(obs)
+
         # Combine steering and velocity into an action
         controlAction = [delta_ref, velocity_ref]
         
         return controlAction
-    
-
-
 
 
 

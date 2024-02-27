@@ -60,6 +60,13 @@ class AgentTrainer():
         for drivingAlgorithmConfig in self.scenarioParams.drivingAlgorithmConfigs:
             self.drivingAlgorithmConfigs.append(functions.openConfigFile('drivingAlgorithms/'+drivingAlgorithmConfig))
         
+        
+        self.vehicleConfigs = []
+        for vehicleConfig in self.scenarioParams.vehicleConfigs:
+            self.vehicleConfigs.append(functions.openConfigFile('vehicleModel/'+vehicleConfig))
+        
+
+
         # Initialise driving algorithms
         self.drivers = self.initialiseDrivingAlgorithms()
 
@@ -97,7 +104,7 @@ class AgentTrainer():
         """
                 
         drivers = []
-        for idx, drivingAlgorithmConfig in enumerate(self.drivingAlgorithmConfigs):
+        for idx, drivingAlgorithmConfig, vehicleConfig in enumerate(self.drivingAlgorithmConfigs, self.vehicleConfigs):
             if drivingAlgorithmConfig.drivingAlgorithm == "purePursuitLineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(purePursuitLineFollower.purePursuitLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
@@ -108,7 +115,7 @@ class AgentTrainer():
 
             if drivingAlgorithmConfig.drivingAlgorithm == "MPCineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
-                    drivers.append(MPCLineFollower.MPCLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
+                    drivers.append(MPCLineFollower.MPCLineFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 
 
 
