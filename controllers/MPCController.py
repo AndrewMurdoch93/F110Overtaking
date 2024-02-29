@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import os
 import functions
+import matplotlib.pyplot as plt
 
 
 class State:
@@ -28,7 +29,7 @@ class MPC():
         self.vehicleConf = vehicleConf
         self.vehicleNumber = vehicleNumber
         self.state = State(x=0.0, y=0.0, yaw=0.0, v=0.0)
-        
+        self.dl = 1   # Default parameter for cubic spline course
 
         # MPC parameters
         self.NX = self.controllerConf.NX   # X (states) = x, y, v, yaw
@@ -47,7 +48,18 @@ class MPC():
         # Vehicle model parameters
         self.MAX_STEER = self.vehicleConf.s_max
         self.WB = self.vehicleConf.lf + self.vehicleConf.lr
+        self.MAX_SPEED = self.vehicleConf.v_max
+        self.MIN_SPEED = self.vehicleConf.v_min
+        self.MAX_DSTEER = self.vehicleConf.sv_max
+        self.MAX_ACCEL = self.vehicleConf.a_max
 
+    def reset(self, trackLine):
+
+        self.record_waypoints(cx=trackLine.cx, cy=trackLine.cy, cyaw=trackLine.cyaw, ck=trackLine.ccurve)
+        self.calc_speed_profile(target_speed=self.controllerConf.TARGET_SPEED)
+        
+        self.target_ind = None
+        self.odelta, self.oa = None, None
 
 
 
@@ -207,6 +219,22 @@ class MPC():
         self.ck = ck
 
 
+    def smooth_yaw(self, yaw):
+
+        for i in range(len(yaw) - 1):
+            dyaw = yaw[i + 1] - yaw[i]
+
+            while dyaw >= math.pi / 2.0:
+                yaw[i + 1] -= math.pi * 2.0
+                dyaw = yaw[i + 1] - yaw[i]
+
+            while dyaw <= -math.pi / 2.0:
+                yaw[i + 1] += math.pi * 2.0
+                dyaw = yaw[i + 1] - yaw[i]
+
+        return yaw
+
+
     def calc_speed_profile(self, target_speed):
 
         speed_profile = [target_speed] * len(self.cx)
@@ -233,61 +261,43 @@ class MPC():
 
         speed_profile[-1] = 0.0
 
-        return speed_profile
+        self.sp = speed_profile
 
 
-
-    def smooth_yaw(self, yaw):
-
-        for i in range(len(yaw) - 1):
-            dyaw = yaw[i + 1] - yaw[i]
-
-            while dyaw >= math.pi / 2.0:
-                yaw[i + 1] -= math.pi * 2.0
-                dyaw = yaw[i + 1] - yaw[i]
-
-            while dyaw <= -math.pi / 2.0:
-                yaw[i + 1] += math.pi * 2.0
-                dyaw = yaw[i + 1] - yaw[i]
-
-        return yaw
-
-
-
-    def calc_ref_trajectory(self, state, cx, cy, cyaw, ck, sp, dl, pind):
+    def calc_ref_trajectory(self, state, pind):
 
         xref = np.zeros((self.NX, self.T + 1))
         dref = np.zeros((1, self.T + 1))
-        ncourse = len(cx)
+        ncourse = len(self.cx)
 
-        ind, _ = self.calc_nearest_index(state, cx, cy, cyaw, pind)
+        ind, _ = self.calc_nearest_index(state, pind)
 
         if pind >= ind:
             ind = pind
 
-        xref[0, 0] = cx[ind]
-        xref[1, 0] = cy[ind]
-        xref[2, 0] = sp[ind]
-        xref[3, 0] = cyaw[ind]
+        xref[0, 0] = self.cx[ind]
+        xref[1, 0] = self.cy[ind]
+        xref[2, 0] = self.sp[ind]
+        xref[3, 0] = self.cyaw[ind]
         dref[0, 0] = 0.0  # steer operational point should be 0
 
         travel = 0.0
 
-        for i in range(self.controllerConf.T + 1):
-            travel += abs(state.v) * self.controllerConf.DT
-            dind = int(round(travel / dl))
+        for i in range(self.T + 1):
+            travel += abs(state.v) * self.DT
+            dind = int(round(travel / self.dl))
 
             if (ind + dind) < ncourse:
-                xref[0, i] = cx[ind + dind] # x
-                xref[1, i] = cy[ind + dind] # y
-                xref[2, i] = sp[ind + dind] # v
-                xref[3, i] = cyaw[ind + dind] # yaw
+                xref[0, i] = self.cx[ind + dind] # x
+                xref[1, i] = self.cy[ind + dind] # y
+                xref[2, i] = self.sp[ind + dind] # v
+                xref[3, i] = self.cyaw[ind + dind] # yaw
                 dref[0, i] = 0.0
             else:
-                xref[0, i] = cx[ncourse - 1] # x
-                xref[1, i] = cy[ncourse - 1] # y
-                xref[2, i] = sp[ncourse - 1] # v
-                xref[3, i] = cyaw[ncourse - 1] # yaw
+                xref[0, i] = self.cx[ncourse - 1] # x
+                xref[1, i] = self.cy[ncourse - 1] # y
+                xref[2, i] = self.sp[ncourse - 1] # v
+                xref[3, i] = self.cyaw[ncourse - 1] # yaw
                 dref[0, i] = 0.0
 
         return xref, ind, dref
@@ -315,6 +325,7 @@ class MPC():
 
         return ind, mind
 
+
     def transformObsToState(self, obs):
         
         state = State(
@@ -330,9 +341,27 @@ class MPC():
     def getAction(self, obs):
         
 
-        state = self.transformObsToState(obs)
+        self.state = self.transformObsToState(obs)
 
-        xref, target_ind, dref = self.calc_ref_trajectory(state, cx, cy, cyaw, ck, sp, dl, target_ind)
+        if self.target_ind==None:
+             self.target_ind, _ = self.calc_nearest_index(self.state, 0)
 
-        x0 = [state.x, state.y, state.v, state.yaw]  # current state 
-        oa, odelta, ox, oy, oyaw, ov = self.iterative_linear_mpc_control(xref, x0, dref, oa, odelta)
+        self.xref, self.target_ind, self.dref = self.calc_ref_trajectory(self.state, self.target_ind)
+
+        x0 = [self.state.x, self.state.y, self.state.v, self.state.yaw]  # current state 
+        self.oa, self.odelta, self.ox, self.oy, self.oyaw, self.ov = self.iterative_linear_mpc_control(self.xref, x0, self.dref, self.oa, self.odelta)
+        
+        if self.odelta is not None:
+            di, ai = self.odelta[0], self.oa[0]
+            vi = self.state.v+ai*self.DT
+
+
+        plt.plot(self.cx, self.cy, '-')
+        plt.plot(self.state.x, self.state.y, 'x')
+        # plt.plot(xref)
+        plt.plot(self.ox, self.oy, 's')
+        plt.show()
+
+    
+
+        return di, vi

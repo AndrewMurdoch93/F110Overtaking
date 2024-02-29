@@ -22,8 +22,10 @@ class MPCLineFollower():
         
         self.controller = MPCController.MPC(self.controllerConf, vehicleConf, vehicleNumber)
         
-        self.controller.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
-        self.controller.calc_speed_profile(target_speed=self.controllerConf.TARGET_SPEED)
+        # self.controller.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
+        # self.controller.calc_speed_profile(target_speed=self.controllerConf.TARGET_SPEED)
+
+
 
         self.vehicleNumber = vehicleNumber
         self.e = 0
@@ -34,8 +36,8 @@ class MPCLineFollower():
         """
         reset method is called at the start of every episode
         """
-        
-        self.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
+
+        self.controller.reset(self.trackLine)
         self.timeStep = 0
 
 
@@ -46,7 +48,7 @@ class MPCLineFollower():
         Returns a control action to the main simulation loop
         """ 
 
-        if self.timeStep % self.conf.controllerInterval == 0:
+        if self.timeStep*0.01 % self.controllerConf.DT == 0:
             self.controlAction = self.generateControlAction(obs)
         
         self.timeStep += 1

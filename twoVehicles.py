@@ -104,7 +104,7 @@ class AgentTrainer():
         """
                 
         drivers = []
-        for idx, drivingAlgorithmConfig, vehicleConfig in enumerate(self.drivingAlgorithmConfigs, self.vehicleConfigs):
+        for idx, (drivingAlgorithmConfig, vehicleConfig) in enumerate(zip(self.drivingAlgorithmConfigs, self.vehicleConfigs)):
             if drivingAlgorithmConfig.drivingAlgorithm == "purePursuitLineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(purePursuitLineFollower.purePursuitLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
@@ -113,7 +113,7 @@ class AgentTrainer():
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(LQRLineFollower.LQRLineFollower(conf=drivingAlgorithmConfig, line=self.trackLine, vehicleNumber=idx))
 
-            if drivingAlgorithmConfig.drivingAlgorithm == "MPCineFollower":
+            if drivingAlgorithmConfig.drivingAlgorithm == "MPCLineFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(MPCLineFollower.MPCLineFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 

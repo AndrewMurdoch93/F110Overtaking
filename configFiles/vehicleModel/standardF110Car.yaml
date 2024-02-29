@@ -8,8 +8,8 @@ h: 0.074
 I: 0.04712
 s_min: -0.4189
 s_max: 0.4189
-sv_min': -3.2
-sv_max': 3.2
+sv_min: -3.2
+sv_max: 3.2
 v_switch: 7.319
 a_max: 9.51 
 v_min: -5.0 
