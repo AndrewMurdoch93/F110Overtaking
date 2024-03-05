@@ -48,7 +48,7 @@ class MPCLineFollower():
         Returns a control action to the main simulation loop
         """ 
 
-        if self.timeStep*0.01 % self.controllerConf.DT == 0:
+        if self.timeStep % self.controllerConf.DT*10 == 0:
             self.controlAction = self.generateControlAction(obs)
         
         self.timeStep += 1

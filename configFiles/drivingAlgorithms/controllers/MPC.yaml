@@ -3,7 +3,7 @@ NX: 4   # X (states) = x, y, v, yaw
 NU: 2   # U (controls) = [accel, steer]
 T: 5    # horizon length
 DU_TH: 0.1    # iteration finish param
-MAX_ITER: 3   # Max iteration
+MAX_ITER: 10   # Max iteration
 DT: 0.1       # [s] time tick
 N_IND_SEARCH: 10  # Search index number
 TARGET_SPEED: 4
@@ -15,6 +15,5 @@ Rd_accel: 0.0
 Rd_steer: 0.0
 Q_x: 1.0
 Q_y: 1.0
+Q_yaw: 1
 Q_v: 0.5
-Q_yaw: 0.5
-

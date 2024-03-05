@@ -48,10 +48,11 @@ class MPC():
         # Vehicle model parameters
         self.MAX_STEER = self.vehicleConf.s_max
         self.WB = self.vehicleConf.lf + self.vehicleConf.lr
-        self.MAX_SPEED = self.vehicleConf.v_max
+        self.MAX_SPEED = 4
         self.MIN_SPEED = self.vehicleConf.v_min
         self.MAX_DSTEER = self.vehicleConf.sv_max
-        self.MAX_ACCEL = self.vehicleConf.a_max
+        # self.MAX_ACCEL = self.vehicleConf.a_max
+        self.MAX_ACCEL = 0.5
 
     def reset(self, trackLine):
 
@@ -62,6 +63,35 @@ class MPC():
         self.odelta, self.oa = None, None
 
 
+    def record_waypoints(self, cx, cy, cyaw, ck):
+    
+        self.cx=cx
+        self.cy=cy
+        self.cyaw_smooth = self.smooth_yaw(cyaw)
+        self.cyaw = cyaw
+
+        cyaw_new = cyaw
+        for idx, yaw in enumerate(cyaw):
+            cyaw_new[idx] = functions.pi_2_pi(yaw)
+        self.cyaw = cyaw_new
+
+        self.ck = ck
+
+
+    def smooth_yaw(self, yaw):
+
+        for i in range(len(yaw) - 1):
+            dyaw = yaw[i + 1] - yaw[i]
+
+            while dyaw >= math.pi / 2.0:
+                yaw[i + 1] -= math.pi * 2.0
+                dyaw = yaw[i + 1] - yaw[i]
+
+            while dyaw <= -math.pi / 2.0:
+                yaw[i + 1] += math.pi * 2.0
+                dyaw = yaw[i + 1] - yaw[i]
+
+        return yaw
 
     def update_state(self, state, a, delta):
 
@@ -173,7 +203,7 @@ class MPC():
             cost += cvxpy.quad_form(u[:, t], self.R)
 
             if t != 0:
-                cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
+                cost += cvxpy.quad_form(xref[:, self.T] - x[:, t], self.Q)
 
             A, B, C = self.get_linear_model_matrix(
                 xbar[2, t], xbar[3, t], dref[0, t])
@@ -210,29 +240,6 @@ class MPC():
 
         return oa, odelta, ox, oy, oyaw, ov
 
-
-    def record_waypoints(self, cx, cy, cyaw, ck):
-    
-        self.cx=cx
-        self.cy=cy
-        self.cyaw = self.smooth_yaw(cyaw)
-        self.ck = ck
-
-
-    def smooth_yaw(self, yaw):
-
-        for i in range(len(yaw) - 1):
-            dyaw = yaw[i + 1] - yaw[i]
-
-            while dyaw >= math.pi / 2.0:
-                yaw[i + 1] -= math.pi * 2.0
-                dyaw = yaw[i + 1] - yaw[i]
-
-            while dyaw <= -math.pi / 2.0:
-                yaw[i + 1] += math.pi * 2.0
-                dyaw = yaw[i + 1] - yaw[i]
-
-        return yaw
 
 
     def calc_speed_profile(self, target_speed):
@@ -335,7 +342,7 @@ class MPC():
         state = State(
                     x = obs['poses_x'][self.vehicleNumber],
                     y = obs['poses_y'][self.vehicleNumber],
-                    yaw = obs['poses_theta'][self.vehicleNumber],
+                    yaw = functions.pi_2_pi(obs['poses_theta'][self.vehicleNumber]),
                     v = obs['linear_vels_x'][self.vehicleNumber]
         )
 
@@ -358,14 +365,38 @@ class MPC():
             di, ai = self.odelta[0], self.oa[0]
             vi = self.state.v+ai*self.DT
 
+        print('odelta: ', self.odelta)
+        print('oa', self.oa)
 
+        print('v', self.state.v)
+
+        # plt.figure(1, figsize=(5,4))
+
+        
+        plt.figure(1)
         plt.plot(self.cx, self.cy, '-')
         plt.plot(self.xref[0], self.xref[1], 'o')
         plt.plot(self.ox, self.oy, 's')
         plt.plot(self.state.x, self.state.y, 'x')
         plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
+        plt.axis('scaled')
+        
+        oyaw1 = np.zeros(len(self.oyaw))
+        refyaw1= np.zeros(len(self.xref[3]))
+
+        for idx, (oyaw, refyaw) in enumerate(zip(self.oyaw, self.xref[3])):
+            oyaw1[idx] = functions.pi_2_pi(oyaw)
+            refyaw1[idx] = functions.pi_2_pi(refyaw)
+
+        plt.figure(2)
+        plt.plot(self.oyaw)
+        plt.plot(self.xref[3])
+        plt.plot(oyaw1)
+        plt.plot(refyaw1)
+        plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
         plt.show()
 
+        
     
 
         return di, vi

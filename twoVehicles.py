@@ -132,7 +132,9 @@ class AgentTrainer():
         spawnIdxs = np.zeros(self.numVehicles)
         initialPoses = np.zeros((self.numVehicles, 4))
 
-        spawnIdxs[0] = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
+        # spawnIdxs[0] = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
+
+        spawnIdxs[0] = 1
         for i in range(1, self.numVehicles):
             spawnIdxs[i] = spawnIdxs[i-1]+15 # Cars spawn in front of each other
 
@@ -146,7 +148,7 @@ class AgentTrainer():
             xStart = self.trackLine.cx[int(spawnIdxs[i])]
             yStart = self.trackLine.cy[int(spawnIdxs[i])]
             yawStart = self.trackLine.cyaw[int(spawnIdxs[i])]
-            velStart = np.random.uniform(low=3, high=4)
+            velStart = np.random.uniform(low=3, high=3.9)
             initialPoses[i, :] = np.array([xStart, yStart, yawStart, velStart]) 
 
         return initialPoses
@@ -226,6 +228,7 @@ class AgentTrainer():
         if vehicleModelParamList is not None:
             for i in range(self.numVehicles):
                 self.env.update_params(vehicleModelParamList[i], index=0)
+        
         
         # Reset componenets of the environmnet (vehicle and trackline)
         obs, step_reward, done, info = self.env.reset(initialPoses)
