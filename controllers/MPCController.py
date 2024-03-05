@@ -29,7 +29,7 @@ class MPC():
         self.vehicleConf = vehicleConf
         self.vehicleNumber = vehicleNumber
         self.state = State(x=0.0, y=0.0, yaw=0.0, v=0.0)
-        self.dl = 1   # Default parameter for cubic spline course
+        self.dl = 0.1   # Default parameter for cubic spline course
 
         # MPC parameters
         self.NX = self.controllerConf.NX   # X (states) = x, y, v, yaw
@@ -173,7 +173,7 @@ class MPC():
             cost += cvxpy.quad_form(u[:, t], self.R)
 
             if t != 0:
-                cost += cvxpy.quad_form(xref[:, self.T] - x[:, t], self.Q)
+                cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
 
             A, B, C = self.get_linear_model_matrix(
                 xbar[2, t], xbar[3, t], dref[0, t])
@@ -305,8 +305,12 @@ class MPC():
 
     def calc_nearest_index(self, state, pind):
 
-        dx = [state.x - icx for icx in self.cx[pind:(pind + self.N_IND_SEARCH)]]
-        dy = [state.y - icy for icy in self.cy[pind:(pind + self.N_IND_SEARCH)]]
+        if pind==0:
+            dx = [state.x - icx for icx in self.cx]
+            dy = [state.y - icy for icy in self.cy]
+        else:
+            dx = [state.x - icx for icx in self.cx[pind:(pind + self.N_IND_SEARCH)]]
+            dy = [state.y - icy for icy in self.cy[pind:(pind + self.N_IND_SEARCH)]]
 
         d = [idx ** 2 + idy ** 2 for (idx, idy) in zip(dx, dy)]
 
@@ -340,7 +344,6 @@ class MPC():
 
     def getAction(self, obs):
         
-
         self.state = self.transformObsToState(obs)
 
         if self.target_ind==None:
@@ -357,9 +360,10 @@ class MPC():
 
 
         plt.plot(self.cx, self.cy, '-')
-        plt.plot(self.state.x, self.state.y, 'x')
-        # plt.plot(xref)
+        plt.plot(self.xref[0], self.xref[1], 'o')
         plt.plot(self.ox, self.oy, 's')
+        plt.plot(self.state.x, self.state.y, 'x')
+        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
         plt.show()
 
     
