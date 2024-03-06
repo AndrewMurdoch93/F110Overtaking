@@ -48,11 +48,11 @@ class MPC():
         # Vehicle model parameters
         self.MAX_STEER = self.vehicleConf.s_max
         self.WB = self.vehicleConf.lf + self.vehicleConf.lr
-        self.MAX_SPEED = 4
+        self.MAX_SPEED = 2.5
         self.MIN_SPEED = self.vehicleConf.v_min
         self.MAX_DSTEER = self.vehicleConf.sv_max
         # self.MAX_ACCEL = self.vehicleConf.a_max
-        self.MAX_ACCEL = 0.5
+        self.MAX_ACCEL = 10
 
     def reset(self, trackLine):
 
@@ -70,13 +70,13 @@ class MPC():
         self.cyaw_smooth = self.smooth_yaw(cyaw)
         self.cyaw = cyaw
 
-        cyaw_new = cyaw
-        for idx, yaw in enumerate(cyaw):
-            cyaw_new[idx] = functions.pi_2_pi(yaw)
-        self.cyaw = cyaw_new
+        # cyaw_new = cyaw
+        # for idx, yaw in enumerate(cyaw):
+        #     cyaw_new[idx] = functions.pi_2_pi(yaw)
+        # self.cyaw = cyaw_new
 
-        plt.plot(self.cyaw)
-        plt.show()
+        # plt.plot(self.cyaw)
+        # plt.show()
 
         self.ck = ck
 
@@ -352,10 +352,22 @@ class MPC():
                     y = obs['poses_y'][self.vehicleNumber],
                     # yaw = functions.pi_2_pi(obs['poses_theta'][self.vehicleNumber]),
                     yaw = obs['poses_theta'][self.vehicleNumber],
+                    # yaw = self.correctYaw(obs['poses_theta'][self.vehicleNumber]),
                     v = obs['linear_vels_x'][self.vehicleNumber]
         )
 
         return state
+
+    def correctYaw(self, yaw):
+        
+        ns = np.arange(-10,10,1)
+        yaws = yaw + ns*2.0*np.pi
+        error = self.cyaw[self.target_ind]-yaws
+        squaredError = np.square(error)
+        ind = np.argmin(squaredError)
+        n = ns[ind]
+        newYaw = yaw + n*2.0*np.pi
+        return newYaw
 
 
     def getAction(self, obs):
@@ -364,6 +376,9 @@ class MPC():
 
         if self.target_ind==None:
              self.target_ind, _ = self.calc_nearest_index(self.state, 0)
+
+        self.state.yaw = self.correctYaw(self.state.yaw)
+
 
         self.xref, self.target_ind, self.dref = self.calc_ref_trajectory(self.state, self.target_ind)
 
@@ -382,28 +397,28 @@ class MPC():
         # plt.figure(1, figsize=(5,4))
 
         
-        plt.figure(1)
-        plt.plot(self.cx, self.cy, '-')
-        plt.plot(self.xref[0], self.xref[1], 'o')
-        plt.plot(self.ox, self.oy, 's')
-        plt.plot(self.state.x, self.state.y, 'x')
-        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
-        plt.axis('scaled')
+        # plt.figure(1)
+        # plt.plot(self.cx, self.cy, '-')
+        # plt.plot(self.xref[0], self.xref[1], 'o')
+        # plt.plot(self.ox, self.oy, 's')
+        # plt.plot(self.state.x, self.state.y, 'x')
+        # plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
+        # plt.axis('scaled')
         
-        oyaw1 = np.zeros(len(self.oyaw))
-        refyaw1= np.zeros(len(self.xref[3]))
+        # oyaw1 = np.zeros(len(self.oyaw))
+        # refyaw1= np.zeros(len(self.xref[3]))
 
-        for idx, (oyaw, refyaw) in enumerate(zip(self.oyaw, self.xref[3])):
-            oyaw1[idx] = functions.pi_2_pi(oyaw)
-            refyaw1[idx] = functions.pi_2_pi(refyaw)
+        # for idx, (oyaw, refyaw) in enumerate(zip(self.oyaw, self.xref[3])):
+        #     oyaw1[idx] = functions.pi_2_pi(oyaw)
+        #     refyaw1[idx] = functions.pi_2_pi(refyaw)
 
-        plt.figure(2)
-        plt.plot(self.oyaw)
-        plt.plot(self.xref[3])
-        plt.plot(oyaw1)
-        plt.plot(refyaw1)
-        plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
-        plt.show()
+        # plt.figure(2)
+        # plt.plot(self.oyaw)
+        # plt.plot(self.xref[3])
+        # plt.plot(oyaw1)
+        # plt.plot(refyaw1)
+        # plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
+        # plt.show()
 
         
     

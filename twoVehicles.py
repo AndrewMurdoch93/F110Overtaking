@@ -151,7 +151,7 @@ class AgentTrainer():
             velStart = np.random.uniform(low=3, high=3.9)
             # initialPoses[i, :] = np.array([xStart, yStart, yawStart, velStart]) 
             
-            initialPoses[i, :] = np.array([xStart, yStart, -0.1, velStart]) 
+            initialPoses[i, :] = np.array([xStart, yStart, 0.0, 0.1]) 
 
 
         plt.plot(self.trackLine.cyaw)

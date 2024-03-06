@@ -4,6 +4,6 @@
 drivingAlgorithm: "MPCLineFollower"
 globalPlan: "trackCenterLine" # Current options: trackCenterLine, ...
 controllerConfig: "MPC"
-referenceVelocity: 4 # m/s
-controllerInterval: 5  # In Number of time steps between controller outputs
+referenceVelocity: 2 # m/s
+controllerInterval: 10  # In Number of time steps between controller outputs
 
