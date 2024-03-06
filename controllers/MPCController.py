@@ -75,6 +75,9 @@ class MPC():
             cyaw_new[idx] = functions.pi_2_pi(yaw)
         self.cyaw = cyaw_new
 
+        plt.plot(self.cyaw)
+        plt.show()
+
         self.ck = ck
 
 
@@ -125,7 +128,7 @@ class MPC():
         A[0, 3] = -self.DT * v * math.sin(phi)
         A[1, 2] = self.DT * math.sin(phi)
         A[1, 3] = self.DT * v * math.cos(phi)
-        A[3, 2] = self.DT * math.tan(delta) /   self.WB
+        A[3, 2] = self.DT * math.tan(delta)/self.WB
 
         B = np.zeros((self.NX, self.NU))
         B[2, 0] = self.DT
@@ -157,13 +160,18 @@ class MPC():
             xbar[2, i] = state.v
             xbar[3, i] = state.yaw
 
+        
+        # plt.plot(xbar[0], xbar[1])
+        # plt.plot(xbar[3])
+        # plt.show()
+
         return xbar
 
     
     
     def iterative_linear_mpc_control(self, xref, x0, dref, oa, od):
         """
-        MPC contorl with updating operational point iteraitvely
+        MPC control with updating operational point iteratively
         """
 
         if oa is None or od is None:
@@ -203,7 +211,7 @@ class MPC():
             cost += cvxpy.quad_form(u[:, t], self.R)
 
             if t != 0:
-                cost += cvxpy.quad_form(xref[:, self.T] - x[:, t], self.Q)
+                cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
 
             A, B, C = self.get_linear_model_matrix(
                 xbar[2, t], xbar[3, t], dref[0, t])
@@ -342,7 +350,8 @@ class MPC():
         state = State(
                     x = obs['poses_x'][self.vehicleNumber],
                     y = obs['poses_y'][self.vehicleNumber],
-                    yaw = functions.pi_2_pi(obs['poses_theta'][self.vehicleNumber]),
+                    # yaw = functions.pi_2_pi(obs['poses_theta'][self.vehicleNumber]),
+                    yaw = obs['poses_theta'][self.vehicleNumber],
                     v = obs['linear_vels_x'][self.vehicleNumber]
         )
 

@@ -149,7 +149,13 @@ class AgentTrainer():
             yStart = self.trackLine.cy[int(spawnIdxs[i])]
             yawStart = self.trackLine.cyaw[int(spawnIdxs[i])]
             velStart = np.random.uniform(low=3, high=3.9)
-            initialPoses[i, :] = np.array([xStart, yStart, yawStart, velStart]) 
+            # initialPoses[i, :] = np.array([xStart, yStart, yawStart, velStart]) 
+            
+            initialPoses[i, :] = np.array([xStart, yStart, -0.1, velStart]) 
+
+
+        plt.plot(self.trackLine.cyaw)
+        plt.show()
 
         return initialPoses
 
@@ -232,6 +238,7 @@ class AgentTrainer():
         
         # Reset componenets of the environmnet (vehicle and trackline)
         obs, step_reward, done, info = self.env.reset(initialPoses)
+    
         next_obs = obs
         self.trackLine.reset(obs)
         
