@@ -240,6 +240,7 @@ class F110Env(gym.Env):
         print(f"Personal done called: {location}")
         return True
 
+
     def _update_state(self, obs_dict):
         """
         Update the env's states according to observations

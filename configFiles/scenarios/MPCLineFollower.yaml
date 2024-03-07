@@ -4,7 +4,7 @@
 
 
 
-map: "porto"
+map: "shape"
 drivingAlgorithmConfigs: ["MPCLineFollower"]
 learningAlgorithm: [False]
 vehicleConfigs: ["standardF110Car"]

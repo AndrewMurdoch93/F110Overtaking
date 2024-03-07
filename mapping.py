@@ -148,11 +148,32 @@ class map:
         return c, r
     
 
+def defineStraightTrackLine():
+    
+    
+    m = map('straightLine')
+    plt.imshow(m.gray_im, extent=(m.origin[0], m.origin[0] + m.map_width, m.origin[1], m.origin[1]+m.map_height))
+    plt.plot([0,49], [0,0])
+    plt.show()
 
+    rx, ry, ryaw, rk, d = cubic_spline_planner.calc_spline_course([0,49], [0,0])
+    plt.plot(rx, ry)
+    plt.show()
+
+    centerlineData = {
+        'x': rx,
+        'y': ry,
+        'yaw': ryaw,
+        'curve': rk,
+        'distance': d
+    }
+    
+    centerlineDataframe = pd.DataFrame(centerlineData)
+    centerlineDataframe.to_csv(sys.path[0] + '/maps/' + 'straightLine' + '_centerline.csv')
 
 
 def test_map():
-    m = map('f1_esp')
+    m = map('shape')
     m.find_centerline(False)
     plt.imshow(m.gray_im, extent=(m.origin[0], m.origin[0] + m.map_width, m.origin[1], m.origin[1]+m.map_height))
     plt.plot(m.rx,m.ry)
@@ -160,7 +181,7 @@ def test_map():
 
 
 def generate_csv():
-    mapName = 'f1_esp'
+    mapName = 'shape'
     
     m = map(mapName)
     m.find_centerline(True)
@@ -178,5 +199,6 @@ def generate_csv():
 
 
 if __name__=='__main__':
-    # test_map()
-    generate_csv()
+    test_map()
+    # defineStraightTrackLine()
+    # generate_csv()

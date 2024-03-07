@@ -48,11 +48,11 @@ class MPC():
         # Vehicle model parameters
         self.MAX_STEER = self.vehicleConf.s_max
         self.WB = self.vehicleConf.lf + self.vehicleConf.lr
-        self.MAX_SPEED = 2.5
+        self.MAX_SPEED = 3
         self.MIN_SPEED = self.vehicleConf.v_min
         self.MAX_DSTEER = self.vehicleConf.sv_max
-        # self.MAX_ACCEL = self.vehicleConf.a_max
-        self.MAX_ACCEL = 10
+        self.MAX_ACCEL = self.vehicleConf.a_max
+        # self.MAX_ACCEL = 10
 
     def reset(self, trackLine):
 
@@ -315,6 +315,12 @@ class MPC():
                 xref[3, i] = self.cyaw[ncourse - 1] # yaw
                 dref[0, i] = 0.0
 
+            # xref[0, i] = self.cx[(ind + dind)%len(self.cx)] # x
+            # xref[1, i] = self.cy[(ind + dind)%len(self.cx)] # y
+            # xref[2, i] = self.sp[(ind + dind)%len(self.cx)] # v
+            # xref[3, i] = self.cyaw[(ind + dind)%len(self.cx)] # yaw
+            # dref[0, i] = 0.0
+
         return xref, ind, dref
 
 
@@ -397,14 +403,18 @@ class MPC():
         # plt.figure(1, figsize=(5,4))
 
         
-        # plt.figure(1)
-        # plt.plot(self.cx, self.cy, '-')
-        # plt.plot(self.xref[0], self.xref[1], 'o')
-        # plt.plot(self.ox, self.oy, 's')
-        # plt.plot(self.state.x, self.state.y, 'x')
-        # plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
-        # plt.axis('scaled')
-        
+        plt.cla()
+        # for stopping simulation with the esc key.
+        plt.gcf().canvas.mpl_connect('key_release_event',
+                lambda event: [exit(0) if event.key == 'escape' else None])
+        plt.plot(self.cx, self.cy, '-')
+        plt.plot(self.xref[0], self.xref[1], 'o')
+        plt.plot(self.ox, self.oy, 's')
+        plt.plot(self.state.x, self.state.y, 'x')
+        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
+        plt.axis('scaled')
+        plt.pause(0.0001)
+
         # oyaw1 = np.zeros(len(self.oyaw))
         # refyaw1= np.zeros(len(self.xref[3]))
 
@@ -418,6 +428,8 @@ class MPC():
         # plt.plot(oyaw1)
         # plt.plot(refyaw1)
         # plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
+        
+        
         # plt.show()
 
         

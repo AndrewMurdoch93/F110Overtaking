@@ -117,8 +117,6 @@ class AgentTrainer():
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(MPCLineFollower.MPCLineFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 
-
-
         return drivers
 
 
@@ -134,7 +132,7 @@ class AgentTrainer():
 
         # spawnIdxs[0] = np.random.randint(low = 0, high = self.trackLine.numberIdxs)
 
-        spawnIdxs[0] = 1
+        spawnIdxs[0] = 10
         for i in range(1, self.numVehicles):
             spawnIdxs[i] = spawnIdxs[i-1]+15 # Cars spawn in front of each other
 
@@ -153,9 +151,6 @@ class AgentTrainer():
             
             initialPoses[i, :] = np.array([xStart, yStart, 0.0, 0.1]) 
 
-
-        plt.plot(self.trackLine.cyaw)
-        plt.show()
 
         return initialPoses
 
