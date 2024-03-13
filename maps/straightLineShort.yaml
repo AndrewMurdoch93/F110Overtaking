@@ -1,6 +1,6 @@
-image: straightLine.png
+image: straightLineShort.png
 
-origin: [-10.0, -15.0, 0.0]
+origin: [-1.5, -3.5, 0.0]
 resolution: 0.05
 
 negate: 0

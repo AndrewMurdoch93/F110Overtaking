@@ -4,8 +4,8 @@
 
 
 
-map: "shape"
+map: "porto"
 drivingAlgorithmConfigs: ["MPCLineFollower"]
-learningAlgorithm: [False]
+learningAlgorithm: [False, False]
 vehicleConfigs: ["standardF110Car"]
 savePath: 'experimentsData/testingData'

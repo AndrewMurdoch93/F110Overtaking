@@ -233,12 +233,14 @@ class F110Env(gym.Env):
         return bool(done), self.toggle_list >= 2
 
     def check_location(self):
-        location = np.array([self.poses_x[0], self.poses_y[0]])
-        p_done = self.sim.agents[0].scan_simulator.check_location(location)
-        if not p_done:
-            return False
-        print(f"Personal done called: {location}")
-        return True
+        # location = np.array([self.poses_x[0], self.poses_y[0]])
+        # p_done = self.sim.agents[0].scan_simulator.check_location(location)
+        # if not p_done:
+        #     return False
+        # print(f"Personal done called: {location}")
+        # return True
+
+        return False
 
 
     def _update_state(self, obs_dict):

@@ -1,12 +1,13 @@
 import numpy as np
 import functions
 import math
-from controllers import MPCController
+
+from controllers import MPCOvertakingController
 
 
 
 
-class MPCLineFollower():
+class MPCOvertaker():
     """
     This class contains all methods pertaining to a simple pure pusuit centerline following algorithm
     """
@@ -20,7 +21,7 @@ class MPCLineFollower():
 
         self.controllerConf = functions.openConfigFile('drivingAlgorithms/controllers/'+algorithmConf.controllerConfig)
         
-        self.controller = MPCController.MPC(self.controllerConf, vehicleConf, vehicleNumber, algorithmConf.referenceVelocity)
+        self.controller = MPCOvertakingController.MPC(self.controllerConf, vehicleConf, vehicleNumber, algorithmConf.referenceVelocity)
         
         # self.controller.record_waypoints(cx=self.trackLine.cx, cy=self.trackLine.cy, cyaw=self.trackLine.cyaw, ck=self.trackLine.ccurve)
         # self.controller.calc_speed_profile(target_speed=self.controllerConf.TARGET_SPEED)

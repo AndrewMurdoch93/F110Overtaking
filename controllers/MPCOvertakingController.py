@@ -54,6 +54,9 @@ class MPC():
         self.MAX_ACCEL = self.vehicleConf.a_max
         # self.MAX_ACCEL = 10
 
+        self.obstacle = np.zeros((2,6))
+        self.obstacle[0,:] = 2
+
     def reset(self, trackLine):
 
         self.record_waypoints(cx=trackLine.cx, cy=trackLine.cy, cyaw=trackLine.cyaw, ck=trackLine.ccurve)
@@ -225,11 +228,16 @@ class MPC():
 
         cost += cvxpy.quad_form(xref[:, self.T] - x[:, self.T], self.Qf)
 
+
+
         constraints += [x[:, 0] == x0]
         constraints += [x[2, :] <= self.MAX_SPEED]
         constraints += [x[2, :] >= self.MIN_SPEED]
         constraints += [cvxpy.abs(u[0, :]) <= self.MAX_ACCEL]
         constraints += [cvxpy.abs(u[1, :]) <= self.MAX_STEER]
+
+        
+
 
         prob = cvxpy.Problem(cvxpy.Minimize(cost), constraints)
         prob.solve(solver=cvxpy.ECOS, verbose=False)
@@ -412,7 +420,9 @@ class MPC():
         plt.plot(self.ox, self.oy, 's')
         plt.plot(self.state.x, self.state.y, 'x')
         plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
-        plt.axis('scaled')
+        # plt.axis('scaled')
+        plt.xlim([0,10])
+        plt.ylim([-1,1])
         plt.pause(0.0001)
 
         # oyaw1 = np.zeros(len(self.oyaw))

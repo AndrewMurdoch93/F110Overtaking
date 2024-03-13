@@ -23,6 +23,7 @@ import trackCenterline
 from drivingAlgorithms import purePursuitLineFollower
 from drivingAlgorithms import LQRLineFollower
 from drivingAlgorithms import MPCLineFollower
+from drivingAlgorithms import MPCOvertaker
 
 
 
@@ -117,6 +118,13 @@ class AgentTrainer():
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
                     drivers.append(MPCLineFollower.MPCLineFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 
+
+            if drivingAlgorithmConfig.drivingAlgorithm == "MPCOvertaker":
+                if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
+                    drivers.append(MPCOvertaker.MPCOvertaker(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
+
+
+
         return drivers
 
 
@@ -151,6 +159,7 @@ class AgentTrainer():
             
             initialPoses[i, :] = np.array([xStart, yStart, 0.0, 0.1]) 
 
+            initialPoses[0,1] = 0.0
 
         return initialPoses
 
@@ -297,7 +306,8 @@ class AgentTrainer():
 
 # race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
 # race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
-race(scenarioFilename='MPCLineFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True) 
+# race(scenarioFilename='MPCLineFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)
+# race(scenarioFilename='MPCOvertake', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)  
 
 
 

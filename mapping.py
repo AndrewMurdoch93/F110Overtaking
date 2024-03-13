@@ -151,12 +151,12 @@ class map:
 def defineStraightTrackLine():
     
     
-    m = map('straightLine')
+    m = map('straightLineShort')
     plt.imshow(m.gray_im, extent=(m.origin[0], m.origin[0] + m.map_width, m.origin[1], m.origin[1]+m.map_height))
-    plt.plot([0,49], [0,0])
-    plt.show()
+    # plt.plot([0,30], [0,0])
+    # plt.show()
 
-    rx, ry, ryaw, rk, d = cubic_spline_planner.calc_spline_course([0,49], [0,0])
+    rx, ry, ryaw, rk, d = cubic_spline_planner.calc_spline_course([0,37], [0,0])
     plt.plot(rx, ry)
     plt.show()
 
@@ -169,7 +169,7 @@ def defineStraightTrackLine():
     }
     
     centerlineDataframe = pd.DataFrame(centerlineData)
-    centerlineDataframe.to_csv(sys.path[0] + '/maps/' + 'straightLine' + '_centerline.csv')
+    centerlineDataframe.to_csv(sys.path[0] + '/maps/' + 'straightLineShort' + '_centerline.csv')
 
 
 def test_map():
@@ -199,6 +199,6 @@ def generate_csv():
 
 
 if __name__=='__main__':
-    test_map()
-    # defineStraightTrackLine()
+    # test_map()
+    defineStraightTrackLine()
     # generate_csv()

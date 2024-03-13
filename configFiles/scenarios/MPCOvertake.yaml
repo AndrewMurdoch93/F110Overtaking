@@ -1,0 +1,11 @@
+# Experiment performed to get get an MPC controller (in the ego vehicle) to overtake a slower moving target  vehicle (in front)
+# Ego vehicle = MPC controller, tracks centerline but with constraint of not passing through area occupied by target vehicle
+# Target vehicle = MPC controller, tracks centerline
+
+
+
+map: "straightLineShort"
+drivingAlgorithmConfigs: ["MPCOvertaker", "MPCLineFollower"]
+learningAlgorithm: [False, False]
+vehicleConfigs: ["standardF110Car", "standardF110Car"]
+savePath: 'experimentsData/testingData'

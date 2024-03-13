@@ -6,7 +6,6 @@ DU_TH: 0.1    # iteration finish param
 MAX_ITER: 10   # Max iteration
 DT: 0.15       # [s] time tick
 N_IND_SEARCH: 10  # Search index number
-TARGET_SPEED: 4
 
 # Cost matrices
 R_accel: 0.0
