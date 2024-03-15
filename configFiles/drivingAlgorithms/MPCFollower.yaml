@@ -1,7 +1,7 @@
 # Config file for a driving algorithm comprising only an MPC controller for steering and velocity,
 # and no variable velocity control (tracks a constant velocity)
 
-drivingAlgorithm: "MPCOvertaker"
+drivingAlgorithm: "MPCFollower"
 globalPlan: "trackCenterLine" # Current options: trackCenterLine, ...
 controllerConfig: "MPC"
 referenceVelocity: 2.5 # m/s

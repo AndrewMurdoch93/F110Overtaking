@@ -8,10 +8,10 @@ DT: 0.15       # [s] time tick
 N_IND_SEARCH: 10  # Search index number
 
 # Cost matrices
-R_accel: 0.0
-R_steer: 0.0
-Rd_accel: 0.0
-Rd_steer: 0.0
+R_accel: 0.1
+R_steer: 0.1
+Rd_accel: 0.1
+Rd_steer: 0.1
 Q_x: 1.0
 Q_y: 1.0
 Q_yaw: 0.5

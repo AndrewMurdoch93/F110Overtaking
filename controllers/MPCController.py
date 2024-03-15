@@ -54,6 +54,10 @@ class MPC():
         self.MAX_ACCEL = self.vehicleConf.a_max
         # self.MAX_ACCEL = 10
 
+        # For plotting nice graphs
+        self.plannedTrajectories = []
+        self.realTrajectory = [] 
+
     def reset(self, trackLine):
 
         self.record_waypoints(cx=trackLine.cx, cy=trackLine.cy, cyaw=trackLine.cyaw, ck=trackLine.ccurve)
@@ -210,8 +214,8 @@ class MPC():
         for t in range(self.T):
             cost += cvxpy.quad_form(u[:, t], self.R)
 
-            if t != 0:
-                cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
+            # if t != 0:
+            #     cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
 
             A, B, C = self.get_linear_model_matrix(
                 xbar[2, t], xbar[3, t], dref[0, t])
@@ -395,43 +399,23 @@ class MPC():
             di, ai = self.odelta[0], self.oa[0]
             vi = self.state.v+ai*self.DT
 
-        print('odelta: ', self.odelta)
-        print('oa', self.oa)
-
-        print('v', self.state.v)
 
         # plt.figure(1, figsize=(5,4))
+        # plt.cla()
+        # # for stopping simulation with the esc key.
+        # plt.gcf().canvas.mpl_connect('key_release_event',
+        #         lambda event: [exit(0) if event.key == 'escape' else None])
+        # plt.plot(self.cx, self.cy, '-')
+        # plt.plot(self.xref[0], self.xref[1], 'o')
+        # plt.plot(self.ox, self.oy, 's')
+        # plt.plot(self.state.x, self.state.y, 'x')
+        # plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
+        # plt.axis('scaled')
+        # plt.pause(0.0001)
 
-        
-        plt.cla()
-        # for stopping simulation with the esc key.
-        plt.gcf().canvas.mpl_connect('key_release_event',
-                lambda event: [exit(0) if event.key == 'escape' else None])
-        plt.plot(self.cx, self.cy, '-')
-        plt.plot(self.xref[0], self.xref[1], 'o')
-        plt.plot(self.ox, self.oy, 's')
-        plt.plot(self.state.x, self.state.y, 'x')
-        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
-        plt.axis('scaled')
-        plt.pause(0.0001)
 
-        # oyaw1 = np.zeros(len(self.oyaw))
-        # refyaw1= np.zeros(len(self.xref[3]))
-
-        # for idx, (oyaw, refyaw) in enumerate(zip(self.oyaw, self.xref[3])):
-        #     oyaw1[idx] = functions.pi_2_pi(oyaw)
-        #     refyaw1[idx] = functions.pi_2_pi(refyaw)
-
-        # plt.figure(2)
-        # plt.plot(self.oyaw)
-        # plt.plot(self.xref[3])
-        # plt.plot(oyaw1)
-        # plt.plot(refyaw1)
-        # plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
-        
-        
-        # plt.show()
-
+        self.plannedTrajectories.append([self.ox, self.oy])
+        self.realTrajectory.append(np.array([self.state.x, self.state.y]))
         
     
 

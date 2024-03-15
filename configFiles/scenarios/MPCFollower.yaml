@@ -5,7 +5,7 @@
 
 
 map: "straightLineShort"
-drivingAlgorithmConfigs: ["MPCOvertaker", "MPCLineFollower"]
+drivingAlgorithmConfigs: ["MPCFollower", "MPCLineFollower"]
 learningAlgorithm: [False, False]
 vehicleConfigs: ["standardF110Car", "standardF110Car"]
 savePath: 'experimentsData/testingData'

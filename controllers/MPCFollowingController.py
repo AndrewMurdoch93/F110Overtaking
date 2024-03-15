@@ -29,6 +29,7 @@ class MPC():
         self.vehicleConf = vehicleConf
         self.vehicleNumber = vehicleNumber
         self.state = State(x=0.0, y=0.0, yaw=0.0, v=0.0)
+        self.targetState = State(x=0.0, y=0.0, yaw=0.0, v=0.0)
         self.dl = 0.1   # Default parameter for cubic spline course
 
         # MPC parameters
@@ -62,7 +63,7 @@ class MPC():
         self.record_waypoints(cx=trackLine.cx, cy=trackLine.cy, cyaw=trackLine.cyaw, ck=trackLine.ccurve)
         self.calc_speed_profile(target_speed=self.TARGET_SPEED)
         
-        self.target_ind = None
+        self.target_ind = 0
         self.odelta, self.oa = None, None
 
 
@@ -163,11 +164,6 @@ class MPC():
             xbar[2, i] = state.v
             xbar[3, i] = state.yaw
 
-        
-        # plt.plot(xbar[0], xbar[1])
-        # plt.plot(xbar[3])
-        # plt.show()
-
         return xbar
 
     
@@ -213,13 +209,13 @@ class MPC():
         for t in range(self.T):
             cost += cvxpy.quad_form(u[:, t], self.R)
 
-            if t != 0:
-                cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
+            # if t != 0:
+            #     cost += cvxpy.quad_form(xref[:, t] - x[:, t], self.Q)
 
             A, B, C = self.get_linear_model_matrix(
                 xbar[2, t], xbar[3, t], dref[0, t])
             constraints += [x[:, t + 1] == A @ x[:, t] + B @ u[:, t] + C]
-            # constraints += [x[:, t + 1] == A @ x[:, t] + B @ u[:, t]]
+
 
             if t < (self.T - 1):
                 cost += cvxpy.quad_form(u[:, t + 1] - u[:, t], self.Rd)
@@ -359,15 +355,15 @@ class MPC():
         return ind, mind
 
 
-    def transformObsToState(self, obs):
+    def transformObsToState(self, obs, vehicleNumber):
         
         state = State(
-                    x = obs['poses_x'][self.vehicleNumber],
-                    y = obs['poses_y'][self.vehicleNumber],
+                    x = obs['poses_x'][vehicleNumber],
+                    y = obs['poses_y'][vehicleNumber],
                     # yaw = functions.pi_2_pi(obs['poses_theta'][self.vehicleNumber]),
-                    yaw = obs['poses_theta'][self.vehicleNumber],
+                    yaw = obs['poses_theta'][vehicleNumber],
                     # yaw = self.correctYaw(obs['poses_theta'][self.vehicleNumber]),
-                    v = obs['linear_vels_x'][self.vehicleNumber]
+                    v = obs['linear_vels_x'][vehicleNumber]
         )
 
         return state
@@ -383,18 +379,44 @@ class MPC():
         newYaw = yaw + n*2.0*np.pi
         return newYaw
 
+    
+    def getreferenceState(self, state, targetState):
+        """
+        Calculate the state that the ego vehicle is aiming for
+        also get dref, operational steer point
+        """
+        
+        # Create variables
+        xref = np.zeros(self.NX)
+        dref = np.zeros((1, self.T + 1))
+        lineBetweenVehicles = np.zeros((2,10))
+
+        lineBetweenVehicles[0,:] = np.linspace(state.x, targetState.x, 10)
+        lineBetweenVehicles[1,:] = np.linspace(state.y, targetState.y, 10)
+
+        x = lineBetweenVehicles[0,8]
+        y = lineBetweenVehicles[1,8]
+        v = targetState.v
+        yaw = targetState.yaw
+
+        targetState = np.array([x, y, v, yaw]) 
+
+        return targetState, dref
+
+
+
 
     def getAction(self, obs):
         
-        self.state = self.transformObsToState(obs)
+        self.state = self.transformObsToState(obs, self.vehicleNumber)
+        self.targetState = self.transformObsToState(obs=obs, vehicleNumber=1)
 
-        if self.target_ind==None:
-             self.target_ind, _ = self.calc_nearest_index(self.state, 0)
+        self.target_ind, _ = self.calc_nearest_index(self.state, self.target_ind)
 
         self.state.yaw = self.correctYaw(self.state.yaw)
+        self.targetState.yaw = self.correctYaw(self.targetState.yaw)
 
-
-        self.xref, self.target_ind, self.dref = self.calc_ref_trajectory(self.state, self.target_ind)
+        self.xref, self.dref = self.getreferenceState(self.state, self.targetState)
 
         x0 = [self.state.x, self.state.y, self.state.v, self.state.yaw]  # current state 
         self.oa, self.odelta, self.ox, self.oy, self.oyaw, self.ov = self.iterative_linear_mpc_control(self.xref, x0, self.dref, self.oa, self.odelta)
@@ -403,46 +425,5 @@ class MPC():
             di, ai = self.odelta[0], self.oa[0]
             vi = self.state.v+ai*self.DT
 
-        print('odelta: ', self.odelta)
-        print('oa', self.oa)
-
-        print('v', self.state.v)
-
-        # plt.figure(1, figsize=(5,4))
-
-        
-        plt.cla()
-        # for stopping simulation with the esc key.
-        plt.gcf().canvas.mpl_connect('key_release_event',
-                lambda event: [exit(0) if event.key == 'escape' else None])
-        plt.plot(self.cx, self.cy, '-')
-        plt.plot(self.xref[0], self.xref[1], 'o')
-        plt.plot(self.ox, self.oy, 's')
-        plt.plot(self.state.x, self.state.y, 'x')
-        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position'])
-        # plt.axis('scaled')
-        plt.xlim([0,10])
-        plt.ylim([-1,1])
-        plt.pause(0.0001)
-
-        # oyaw1 = np.zeros(len(self.oyaw))
-        # refyaw1= np.zeros(len(self.xref[3]))
-
-        # for idx, (oyaw, refyaw) in enumerate(zip(self.oyaw, self.xref[3])):
-        #     oyaw1[idx] = functions.pi_2_pi(oyaw)
-        #     refyaw1[idx] = functions.pi_2_pi(refyaw)
-
-        # plt.figure(2)
-        # plt.plot(self.oyaw)
-        # plt.plot(self.xref[3])
-        # plt.plot(oyaw1)
-        # plt.plot(refyaw1)
-        # plt.legend(['Solved yaw', 'Reference yaw', 'Solved yaw, normalised', 'Reference yaw, normalised'])
-        
-        
-        # plt.show()
-
-        
-    
 
         return di, vi

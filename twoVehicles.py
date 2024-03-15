@@ -23,7 +23,7 @@ import trackCenterline
 from drivingAlgorithms import purePursuitLineFollower
 from drivingAlgorithms import LQRLineFollower
 from drivingAlgorithms import MPCLineFollower
-from drivingAlgorithms import MPCOvertaker
+from drivingAlgorithms import MPCFollower
 
 
 
@@ -119,9 +119,9 @@ class AgentTrainer():
                     drivers.append(MPCLineFollower.MPCLineFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 
 
-            if drivingAlgorithmConfig.drivingAlgorithm == "MPCOvertaker":
+            if drivingAlgorithmConfig.drivingAlgorithm == "MPCFollower":
                 if drivingAlgorithmConfig.globalPlan == "trackCenterLine":
-                    drivers.append(MPCOvertaker.MPCOvertaker(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
+                    drivers.append(MPCFollower.MPCFollower(algorithmConf=drivingAlgorithmConfig, vehicleConf=vehicleConfig, line=self.trackLine, vehicleNumber=idx))
 
 
 
@@ -260,7 +260,7 @@ class AgentTrainer():
         controlActions = np.zeros((self.numVehicles, 2))
 
         # Complete one episode
-        while not done and np.any((episodeProgress <= 5*self.trackLine.distance[-1])):
+        while not done and np.any((episodeProgress <= 0.95*self.trackLine.distance[-1])):
             
             # Get actions from each algorithm
             for idx, driver in enumerate(self.drivers):
@@ -295,7 +295,13 @@ class AgentTrainer():
             lapTime=timeStep/100
             print("Episode completed")
 
-
+        
+        for (realTrajectory, plannedTrajectories) in zip(self.drivers[0].controller.realTrajectory, self.drivers[0].controller.plannedTrajectories):
+            plt.plot(plannedTrajectories[0], plannedTrajectories[1], 'g-')
+            plt.plot(realTrajectory[0], realTrajectory[1], 'rx')
+        plt.plot(self.trackLine.cx, self.trackLine.cy, 'b-')
+        plt.legend(['planned trajectories', 'real trajectory', 'centerline'])
+        plt.show()
 
         # if saveTrajectory==False:
         #     return episodeCrash, episodeReward, episodeProgress, lapTime
@@ -307,7 +313,7 @@ class AgentTrainer():
 # race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
 # race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
 # race(scenarioFilename='MPCLineFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)
-# race(scenarioFilename='MPCOvertake', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)  
+race(scenarioFilename='MPCFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)  
 
 
 
