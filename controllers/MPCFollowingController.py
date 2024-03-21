@@ -1,3 +1,4 @@
+from re import X
 import cvxpy
 import math
 import numpy as np
@@ -5,6 +6,7 @@ import sys
 import os
 import functions
 import matplotlib.pyplot as plt
+from scipy.spatial import distance
 
 
 class State:
@@ -283,51 +285,6 @@ class MPC():
         self.sp = speed_profile
 
 
-    def calc_ref_trajectory(self, state, pind):
-
-        xref = np.zeros((self.NX, self.T + 1))
-        dref = np.zeros((1, self.T + 1))
-        ncourse = len(self.cx)
-
-        ind, _ = self.calc_nearest_index(state, pind)
-
-        if pind >= ind:
-            ind = pind
-
-        xref[0, 0] = self.cx[ind]
-        xref[1, 0] = self.cy[ind]
-        xref[2, 0] = self.sp[ind]
-        xref[3, 0] = self.cyaw[ind]
-        dref[0, 0] = 0.0  # steer operational point should be 0
-
-        travel = 0.0
-
-        for i in range(self.T + 1):
-            travel += abs(state.v) * self.DT
-            dind = int(round(travel / self.dl))
-
-            if (ind + dind) < ncourse:
-                xref[0, i] = self.cx[ind + dind] # x
-                xref[1, i] = self.cy[ind + dind] # y
-                xref[2, i] = self.sp[ind + dind] # v
-                xref[3, i] = self.cyaw[ind + dind] # yaw
-                dref[0, i] = 0.0
-            else:
-                xref[0, i] = self.cx[ncourse - 1] # x
-                xref[1, i] = self.cy[ncourse - 1] # y
-                xref[2, i] = self.sp[ncourse - 1] # v
-                xref[3, i] = self.cyaw[ncourse - 1] # yaw
-                dref[0, i] = 0.0
-
-            # xref[0, i] = self.cx[(ind + dind)%len(self.cx)] # x
-            # xref[1, i] = self.cy[(ind + dind)%len(self.cx)] # y
-            # xref[2, i] = self.sp[(ind + dind)%len(self.cx)] # v
-            # xref[3, i] = self.cyaw[(ind + dind)%len(self.cx)] # yaw
-            # dref[0, i] = 0.0
-
-        return xref, ind, dref
-
-
     def calc_nearest_index(self, state, pind):
 
         if pind==0:
@@ -379,6 +336,15 @@ class MPC():
         newYaw = yaw + n*2.0*np.pi
         return newYaw
 
+
+    def getDistanceVector(self, x, y):
+
+        distances = np.zeros(len(x))
+        
+        for i in range(len(distances)):
+            distances[i] = np.sqrt((x[i]**2 + y[i]**2 ))
+
+        return distances
     
     def getreferenceState(self, state, targetState):
         """
@@ -387,21 +353,36 @@ class MPC():
         """
         
         # Create variables
-        xref = np.zeros(self.NX)
-        dref = np.zeros((1, self.T + 1))
         lineBetweenVehicles = np.zeros((2,10))
 
         lineBetweenVehicles[0,:] = np.linspace(state.x, targetState.x, 10)
         lineBetweenVehicles[1,:] = np.linspace(state.y, targetState.y, 10)
+        
+        # distances = self.getDistanceVector(lineBetweenVehicles[0,:], lineBetweenVehicles[1,:])
+        # targetDistance = distances[-1]-0.2
+        # targetIndex = (np.abs(distances - targetDistance)).argmin()
+        # x = lineBetweenVehicles[0,targetIndex]
+        # y = lineBetweenVehicles[1,targetIndex]
 
-        x = lineBetweenVehicles[0,8]
-        y = lineBetweenVehicles[1,8]
+        x = targetState.x
+        y = targetState.y
         v = targetState.v
         yaw = targetState.yaw
 
-        targetState = np.array([x, y, v, yaw]) 
 
-        return targetState, dref
+        xref = np.zeros((self.NX, self.T + 1))
+        dref = np.zeros((1, self.T + 1))
+
+
+        for i in range(self.T + 1):
+            xref[0, i] = x # x
+            xref[1, i] = y # y
+            xref[2, i] = v # v
+            xref[3, i] = yaw # yaw
+            dref[0, i] = 0.0
+        
+
+        return xref, dref
 
 
 
@@ -425,5 +406,20 @@ class MPC():
             di, ai = self.odelta[0], self.oa[0]
             vi = self.state.v+ai*self.DT
 
+
+        plt.figure(1, figsize=(5,4))
+        plt.cla()
+        # for stopping simulation with the esc key.
+        plt.gcf().canvas.mpl_connect('key_release_event',
+                lambda event: [exit(0) if event.key == 'escape' else None])
+        plt.plot(self.cx, self.cy, '-')
+        plt.plot(self.xref[0], self.xref[1], 'o')
+        plt.plot(self.ox, self.oy, 's')
+        plt.plot(self.state.x, self.state.y, 'x')
+        plt.plot(self.targetState.x, self.targetState.y, '+')
+        plt.legend(['Trackline', 'Reference trajectory', 'Planned trajectory', 'Ego vehicle position', 'Target vehicle position'])
+        plt.axis('scaled')
+        # plt.ylim(-1,1)
+        plt.pause(0.0001)
 
         return di, vi
