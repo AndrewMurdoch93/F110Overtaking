@@ -1,16 +1,19 @@
 import numpy as np
 import pathTracker
 import functions
+from baseDrivingAlgorithmClass import DrivingAlgorithm
 
 
 
-class purePursuitLineFollower():
+class PurePursuitLineFollower(DrivingAlgorithm):
     """
     This class contains all methods pertaining to a simple pure pusuit centerline following algorithm
     """
 
-    def __init__(self, conf, line, vehicleNumber):
-        
+    def __init__(self, perception, planner, controller):
+
+
+
         self.conf = conf
         self.trackLine = line
         self.referenceVelocity = conf.referenceVelocity

@@ -29,12 +29,12 @@ from drivingAlgorithms import MPCLineFollower
 from drivingAlgorithms import MPCFollower
 
 
-def race(scenarioFilename, numberEpisodes, numberRuns, saveFilepath, render=True):
+def runSimulation(drivingAlgorithms, map, numberEpisodes, numberRuns, saveFilepath, render=True, **kwargs):
     """
-    Function called to test a single agent
+    Function called to test run a simulation
     """
 
-    simulationManager = SimulationManager(scenarioFilename, render)
+    simulationManager = SimulationManager(map, numberrender)
     simulationManager.executeRuns(numberEpisodes, numberRuns, saveFilepath, vehicleModelParamList=None)
 
  
@@ -44,8 +44,12 @@ class SimulationManager():
     This class manages the training of agents
     """
     
-    def __init__(self, scenarioFilename, render):
+    def __init__(self, numberEpisodes=1, numberRuns=1, render=True):
         
+
+
+
+
         # Get scenario configuration
         self.scenarioParams = functions.openConfigFile('scenarios/'+scenarioFilename)
         self.render=render
@@ -256,7 +260,7 @@ class SimulationManager():
         # Reset episode time to 0
         timeStep=0
 
-        # Define shape of control action
+        # Define shape of control action for F1tenth simulator
         controlActions = np.zeros((self.numVehicles, 2))
 
         # Complete one episode
@@ -313,7 +317,10 @@ class SimulationManager():
 # race(scenarioFilename='twoLineFollowers', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/twoLineFollowers', render=True) 
 # race(scenarioFilename='LQRLineFollower', numberEpisodes=10, numberRuns=1, saveFilepath='experimentsData/testingData/LQRLineFollower', render=True) 
 # race(scenarioFilename='MPCLineFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)
-race(scenarioFilename='MPCFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)  
+
+
+
+runSimulation(scenarioFilename='MPCFollower', numberEpisodes=1, numberRuns=1, saveFilepath='experimentsData/testingData/MPCFollower', render=True)  
 
 
 
