@@ -1,0 +1,3 @@
+[submodule "esl-f1tenth"]
+	path = esl-f1tenth
+	url = https://github.com/jc-schoeman/esl-f1tenth.git
