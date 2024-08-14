@@ -14,7 +14,9 @@ import sys
 import cubic_spline_planner
 import drivingAlgorithms
 import functions
-from f1tenth_gym.f110_env import F110Env
+# from f1tenth_gym.f110_env import F110Env
+from esl_f1_sim.f110_env import F110Env
+
 import mapping
 import pathTracker
 import rewardSignal
