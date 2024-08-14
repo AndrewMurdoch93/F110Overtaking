@@ -1,0 +1,3 @@
+[submodule "esl_f1_sim"]
+	path = esl_f1_sim
+	url = https://github.com/jc-schoeman/esl_f1_sim.git
